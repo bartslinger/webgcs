@@ -1,1 +1,11 @@
 @import 'tailwindcss';
+
+@plugin 'flowbite/plugin';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source "../node_modules/flowbite-svelte/dist";
+
+.mockup-browser {
+    @apply rounded-md relative overflow-hidden overflow-x-auto;
+}
