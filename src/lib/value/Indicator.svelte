@@ -4,7 +4,6 @@
 	let { value } = $props();
 
 	app_state.increment();
-	console.log(app_state.count);
 </script>
 
 Indicator: {value} (count: {app_state.count})

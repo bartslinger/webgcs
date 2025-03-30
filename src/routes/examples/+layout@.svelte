@@ -2,6 +2,8 @@
 	let { children } = $props();
 </script>
 
-<div class="m-10 h-[300px] w-[800px]">
-	{@render children()}
+<div class="h-screen w-full bg-gray-50 p-10">
+	<div class="h-full overflow-hidden rounded-md shadow-lg">
+		{@render children()}
+	</div>
 </div>
