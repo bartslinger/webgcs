@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { IconBuildingAirport, IconPlaneDeparture } from '@tabler/icons-svelte';
+	import IconBuildingAirport from '$lib/tabler-icons/IconBuildingAirport.svelte';
 	let { children } = $props();
 
 	let menu_open = false;
@@ -8,12 +8,11 @@
 
 <nav class="absolute top-0 w-full border-gray-200 dark:bg-gray-900">
 	<div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
-		<a href="https://flowbite.com/" class="flex items-center space-x-1 rtl:space-x-reverse">
+		<a href="/" class="flex items-center space-x-1 rtl:space-x-reverse">
 			<!--			<img src="https://flowbite.com/docs/images/logo.svg" class="h-8" alt="Flowbite Logo" />-->
-			<!--			<IconPlaneDeparture class="" />-->
-			<IconBuildingAirport />
-			<div class="text-xl font-extrabold italic">
-				<span class="text-orange-500">WEB</span>GCS
+			<IconBuildingAirport class="h-6 w-6" stroke-width="2" />
+			<div class="text-xl font-extrabold">
+				<span class="text-teal-700 italic">WEB</span>GCS
 			</div>
 		</a>
 		<button
@@ -48,21 +47,21 @@
 				<li>
 					<a
 						href="/"
-						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-blue-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
+						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-teal-600 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
 						>Roadmap</a
 					>
 				</li>
 				<li>
 					<a
 						href="/"
-						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-blue-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
+						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-teal-600 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
 						>Documentation</a
 					>
 				</li>
 				<li>
 					<a
 						href="/"
-						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-blue-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
+						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-teal-600 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
 						>About</a
 					>
 				</li>
@@ -70,7 +69,7 @@
 					<a
 						href="/"
 						target="_blank"
-						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-blue-700 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
+						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-teal-600 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
 						><span class="sr-only">GitHub</span><svg
 							class="h-6 w-5"
 							xmlns="http://www.w3.org/2000/svg"

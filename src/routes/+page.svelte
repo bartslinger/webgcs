@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Button } from 'flowbite-svelte';
-	import { IconArrowRight } from '@tabler/icons-svelte';
 
 	let heading = 'Mavlink compatible Ground Control Station';
 	// let heading = 'Plug and Play Ground Control Station';
@@ -26,11 +25,14 @@
 			>
 				{subheading}
 			</p>
-			<Button size="xl" color="dark" class="mr-3 inline-flex items-center justify-center" href="/"
-				>Fly Now<IconArrowRight class="-mr-1 ml-2" /></Button
+			<Button
+				size="xl"
+				color="dark"
+				class="mr-3 inline-flex items-center justify-center bg-teal-700 hover:bg-teal-800"
+				href="/">Fly Now<!--<IconArrowRight class="-mr-1 ml-2" />--></Button
 			>
 			<Button color="light" size="xl" class="inline-flex items-center justify-center" href="/"
-				>Documentation</Button
+				>Roadmap</Button
 			>
 		</div>
 	</div>
@@ -48,14 +50,16 @@
 				All you need is a web browser
 			</h2>
 			<p class="mb-4">
-				We are strategists, designers and developers. Innovators and problem solvers. Small enough
-				to be simple and quick, but big enough to deliver the scope you want at the pace you need.
-				Small enough to be simple and quick, but big enough to deliver the scope you want at the
-				pace you need.
+				Because WebGCS runs in the browser, it is compatible with <span class="font-semibold"
+					>all operating systems</span
+				>
+				and devices. You can use it on your desktop, laptop, tablet, or smartphone. No installation is
+				required.
 			</p>
 			<p>
-				We are strategists, designers and developers. Innovators and problem solvers. Small enough
-				to be simple and quick.
+				It is also possible to install it as a PWA (Progressive Web App) on your device, so you can <span
+					class="font-semibold">use it offline</span
+				> as well.
 			</p>
 		</div>
 		<div class="mt-8 grid grid-cols-2 gap-4">
@@ -87,14 +91,13 @@
 				Designed for multi-vehicle operations
 			</h2>
 			<p class="mb-4">
-				We are strategists, designers and developers. Innovators and problem solvers. Small enough
-				to be simple and quick, but big enough to deliver the scope you want at the pace you need.
-				Small enough to be simple and quick, but big enough to deliver the scope you want at the
-				pace you need.
+				Connect multiple vehicles to WebGCS and control them simultaneously. Select a vehicle or
+				group of vehicles to monitor and control. You can also switch between vehicles with a single
+				click.
 			</p>
 			<p>
-				We are strategists, designers and developers. Innovators and problem solvers. Small enough
-				to be simple and quick.
+				Mix and match different types of vehicles, such as drones, rovers, boats, and submarines.
+				WebGCS is designed to be <span class="font-semibold">flexible and scalable</span>.
 			</p>
 		</div>
 		<div class="font-light text-gray-500 sm:text-lg dark:text-gray-400">
@@ -102,14 +105,11 @@
 				Open source
 			</h2>
 			<p class="mb-4">
-				We are strategists, designers and developers. Innovators and problem solvers. Small enough
-				to be simple and quick, but big enough to deliver the scope you want at the pace you need.
-				Small enough to be simple and quick, but big enough to deliver the scope you want at the
-				pace you need.
+				WebGCS is an open-source project. The source code is available on GitHub, so you can use it
+				to build your own custom ground control station or contribute to the project.
 			</p>
 			<p>
-				We are strategists, designers and developers. Innovators and problem solvers. Small enough
-				to be simple and quick.
+				The project is licensed as LGPL-3.0, so you can use it for personal or commercial purposes.
 			</p>
 		</div>
 		<div class="mt-8 grid grid-cols-2 gap-4">

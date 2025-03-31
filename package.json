@@ -67,7 +67,6 @@
 		]
 	},
 	"dependencies": {
-		"@tabler/icons-svelte": "^3.31.0",
 		"mapbox-gl": "^3.10.0"
 	}
 }
