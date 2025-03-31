@@ -31,7 +31,7 @@
 				class="mr-3 inline-flex items-center justify-center bg-teal-700 hover:bg-teal-800"
 				href="/">Fly Now<!--<IconArrowRight class="-mr-1 ml-2" />--></Button
 			>
-			<Button color="light" size="xl" class="inline-flex items-center justify-center" href="/"
+			<Button color="light" size="xl" class="inline-flex items-center justify-center" href="roadmap"
 				>Roadmap</Button
 			>
 		</div>
