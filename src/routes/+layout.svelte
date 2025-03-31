@@ -3,7 +3,7 @@
 	import IconBuildingAirport from '$lib/tabler-icons/IconBuildingAirport.svelte';
 	let { children } = $props();
 
-	let menu_open = false;
+	let menu_open = $state(false);
 </script>
 
 <nav class="absolute top-0 w-full border-gray-200 dark:bg-gray-900">
@@ -46,7 +46,7 @@
 			>
 				<li>
 					<a
-						href="roadmap"
+						href="/roadmap"
 						class="block rounded-sm px-3 py-2 text-gray-900 hover:bg-gray-100 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-teal-600 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent md:dark:hover:text-blue-500"
 						>Roadmap</a
 					>
@@ -153,7 +153,7 @@
 			<hr class="mb-6 border-gray-200 sm:mx-auto lg:mb-8 dark:border-gray-700" />
 			<div class="sm:flex sm:items-center sm:justify-between">
 				<span class="text-sm text-gray-500 sm:text-center dark:text-gray-400"
-					>© 2025 <a href="" class="hover:underline">WebGCS</a>. All Rights Reserved.
+					>© 2025 <a href="/" class="hover:underline">WebGCS</a>. All Rights Reserved.
 				</span>
 				<div class="mt-4 flex space-x-6 sm:mt-0 sm:justify-center">
 					<a
