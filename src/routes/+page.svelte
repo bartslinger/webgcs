@@ -11,7 +11,7 @@
 </script>
 
 <div
-	class="mx-auto grid min-h-screen max-w-screen-xl px-4 py-8 pt-20 lg:grid-cols-12 lg:gap-8 lg:py-32 xl:gap-0"
+	class="mx-auto grid max-w-screen-xl gap-12 px-4 py-8 pt-20 lg:min-h-screen lg:grid-cols-12 lg:gap-8 lg:py-32 xl:gap-0"
 >
 	<div class="mr-auto place-self-center lg:col-span-7">
 		<div>
@@ -25,28 +25,35 @@
 			>
 				{subheading}
 			</p>
-			<Button
-				size="xl"
-				color="dark"
-				class="mr-3 inline-flex items-center justify-center bg-teal-700 hover:bg-teal-800"
-				href="/">Fly Now<!--<IconArrowRight class="-mr-1 ml-2" />--></Button
-			>
-			<Button color="light" size="xl" class="inline-flex items-center justify-center" href="roadmap"
-				>Roadmap</Button
-			>
+			<div class="flex justify-center lg:justify-start">
+				<Button
+					size="xl"
+					color="dark"
+					class="mr-3 inline-flex items-center justify-center bg-teal-700 hover:bg-teal-800"
+					href="/">Fly Now<!--<IconArrowRight class="-mr-1 ml-2" />--></Button
+				>
+				<Button
+					color="light"
+					size="xl"
+					class="inline-flex items-center justify-center"
+					href="roadmap">Roadmap</Button
+				>
+			</div>
 		</div>
 	</div>
-	<div class=" items-center lg:col-span-5 lg:mt-0 lg:flex">
-		<img src="webgcs-small.png" class="rounded-lg shadow-lg" alt="mockup" />
+	<div class="flex items-center justify-center lg:col-span-5 lg:mt-0 lg:flex">
+		<img src="webgcs-small.png" class="w-full max-w-lg rounded-lg shadow-lg" alt="mockup" />
 	</div>
 </div>
 
-<section class="bg-white dark:bg-gray-900">
+<section class="bg-white lg:-mt-24 dark:bg-gray-900">
 	<div
-		class="mx-auto max-w-screen-xl items-center gap-16 px-4 py-8 lg:grid lg:grid-cols-2 lg:px-6 lg:py-16"
+		class="mx-auto grid max-w-screen-xl items-start gap-16 px-4 py-8 lg:grid-cols-2 lg:space-y-0 lg:px-6 lg:py-16"
 	>
 		<div class="font-light text-gray-500 sm:text-lg dark:text-gray-400">
-			<h2 class="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+			<h2
+				class="mb-4 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl dark:text-white"
+			>
 				All you need is a web browser
 			</h2>
 			<p class="mb-4">
@@ -62,32 +69,11 @@
 				> as well.
 			</p>
 		</div>
-		<div class="mt-8 grid grid-cols-2 gap-4">
-			<img
-				class="w-full rounded-lg"
-				src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/content/office-long-2.png"
-				alt="office content 1"
-			/>
-			<img
-				class="mt-4 w-full rounded-lg lg:mt-10"
-				src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/content/office-long-1.png"
-				alt="office content 2"
-			/>
-		</div>
-		<div class="mt-8 grid grid-cols-2 gap-4">
-			<img
-				class="w-full rounded-lg"
-				src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/content/office-long-2.png"
-				alt="office content 1"
-			/>
-			<img
-				class="mt-4 w-full rounded-lg lg:mt-10"
-				src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/content/office-long-1.png"
-				alt="office content 2"
-			/>
-		</div>
+		<!--		<div class="mt-8 grid grid-cols-2 gap-4"></div>-->
 		<div class="font-light text-gray-500 sm:text-lg dark:text-gray-400">
-			<h2 class="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+			<h2
+				class="mb-4 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl dark:text-white"
+			>
 				Designed for multi-vehicle operations
 			</h2>
 			<p class="mb-4">
@@ -101,7 +87,9 @@
 			</p>
 		</div>
 		<div class="font-light text-gray-500 sm:text-lg dark:text-gray-400">
-			<h2 class="mb-4 text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+			<h2
+				class="mb-4 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl dark:text-white"
+			>
 				Open source
 			</h2>
 			<p class="mb-4">
@@ -112,17 +100,6 @@
 				The project is licensed as LGPL-3.0, so you can use it for personal or commercial purposes.
 			</p>
 		</div>
-		<div class="mt-8 grid grid-cols-2 gap-4">
-			<img
-				class="w-full rounded-lg"
-				src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/content/office-long-2.png"
-				alt="office content 1"
-			/>
-			<img
-				class="mt-4 w-full rounded-lg lg:mt-10"
-				src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/content/office-long-1.png"
-				alt="office content 2"
-			/>
-		</div>
+		<!--		<div class="mt-8 grid grid-cols-2 gap-4"></div>-->
 	</div>
 </section>
