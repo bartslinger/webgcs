@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { BasicLayout, Indicator } from '$lib';
 	import { onMount } from 'svelte';
+	import { MavLinkPacketParser } from '$lib/mavlink/mavlink.js';
 
+	let parser = new MavLinkPacketParser();
 	let ws: WebSocket;
 	let retry = true;
 	let reconnectTimeout = 1000; // Initial reconnection delay (1 second)
@@ -16,6 +18,9 @@
 
 		ws.onmessage = (event: MessageEvent) => {
 			console.log(event.data);
+			let buffer = new DataView(event.data);
+			let message = parser.parse({ buffer });
+			console.log(message);
 		};
 
 		ws.onclose = () => {

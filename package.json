@@ -68,6 +68,7 @@
 	},
 	"dependencies": {
 		"@sveltejs/adapter-static": "^3.0.8",
-		"mapbox-gl": "^3.10.0"
+		"mapbox-gl": "^3.10.0",
+		"mavlink-mappings": "1.0.20-20240131-0"
 	}
 }
