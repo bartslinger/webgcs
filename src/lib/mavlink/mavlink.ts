@@ -166,9 +166,8 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 		definition.FIELDS.forEach((field) => {
 			const serialize = SERIALIZERS[field.type];
 			if (!serialize) throw new Error(`Unknown field type ${field.type}: serializer not found`);
-			// @ts-ignore
 			serialize(
-				message[field.name],
+				message[field.name as keyof typeof message],
 				view,
 				field.offset + MavLinkProtocolV1.PAYLOAD_OFFSET,
 				field.length
@@ -270,9 +269,8 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 		definition.FIELDS.forEach((field) => {
 			const serialize = SERIALIZERS[field.type];
 			if (!serialize) throw new Error(`Unknown field type ${field.type}: serializer not found`);
-			// @ts-ignore
 			serialize(
-				message[field.name],
+				message[field.name as keyof typeof message],
 				view,
 				field.offset + MavLinkProtocolV2.PAYLOAD_OFFSET,
 				field.length
