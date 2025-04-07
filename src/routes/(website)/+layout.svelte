@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '../app.css';
+	import '../../app.css';
 	import IconBuildingAirport from '$lib/tabler-icons/IconBuildingAirport.svelte';
 	let { children } = $props();
 
