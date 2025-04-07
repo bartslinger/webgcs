@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { BasicLayout, Indicator } from '$lib';
 	import { onMount } from 'svelte';
 	import {
 		MavLinkPacketParser,
@@ -8,6 +7,7 @@
 	} from '$lib/mavlink/mavlink.js';
 	import { ardupilotmega, common, type MavLinkPacketRegistry, minimal } from 'mavlink-mappings';
 	import { Heartbeat } from 'mavlink-mappings/dist/lib/minimal.js';
+	import { BasicLayout, Indicator } from '$lib/index.js';
 
 	const REGISTRY: MavLinkPacketRegistry = {
 		...minimal.REGISTRY,
@@ -38,32 +38,16 @@
 				const payload = new DataView(message.payload);
 				const clazz = REGISTRY[message.header.msgid];
 				if (clazz) {
+					console.log(message.debug());
 					const data = message.protocol.data(payload, clazz);
 					// console.log('>', data);
 					if (data instanceof Heartbeat) {
-						console.log(packet);
-						console.log('received heartbeat and trying to send one back');
-						const heartbeat = new Heartbeat();
-						heartbeat.autopilot = minimal.MavAutopilot.ARDUPILOTMEGA;
-						let output = protocol.serialize(heartbeat, 1);
-						console.log(output);
-						ws.send(output);
+						console.log(data);
 					}
 				} else {
 					console.log('!', message.debug());
 				}
 			}
-			// const packets = parser.parse({ buffer: event.data });
-			// for (const packet of packets) {
-			// 	const payload = new DataView(packet.payload);
-			// 	const clazz = REGISTRY[packet.header.msgid];
-			// 	if (clazz) {
-			// 		const data = packet.protocol.data(payload, clazz);
-			// 		console.log('>', data);
-			// 	} else {
-			// 		console.log('!', packet.debug());
-			// 	}
-			// }
 		};
 
 		ws.onclose = () => {

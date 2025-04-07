@@ -149,21 +149,18 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 		//console.trace('Serializing message (seq:', seq, ')');
 
 		const definition: MavLinkDataConstructor<MavLinkData> = <any>message.constructor;
-		const buffer = DataView.from(
-			new Uint8Array(
-				MavLinkProtocolV1.PAYLOAD_OFFSET +
-					definition.PAYLOAD_LENGTH +
-					MavLinkProtocol.CHECKSUM_LENGTH
-			)
+		const buffer = new ArrayBuffer(
+			MavLinkProtocolV1.PAYLOAD_OFFSET + definition.PAYLOAD_LENGTH + MavLinkProtocol.CHECKSUM_LENGTH
 		);
+		const view = new DataView(buffer);
 
 		// serialize header
-		buffer.setUint8(MavLinkProtocolV1.START_BYTE, 0);
-		buffer.setUint8(definition.PAYLOAD_LENGTH, 1);
-		buffer.setUint8(seq, 2);
-		buffer.setUint8(this.sysid, 3);
-		buffer.setUint8(this.compid, 4);
-		buffer.setUint8(definition.MSG_ID, 5);
+		view.setUint8(0, MavLinkProtocolV1.START_BYTE);
+		view.setUint8(1, definition.PAYLOAD_LENGTH);
+		view.setUint8(2, seq);
+		view.setUint8(3, this.sysid);
+		view.setUint8(4, this.compid);
+		view.setUint8(5, definition.MSG_ID);
 
 		// serialize fields
 		definition.FIELDS.forEach((field) => {
@@ -172,7 +169,7 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 			// @ts-ignore
 			serialize(
 				message[field.name],
-				buffer,
+				view,
 				field.offset + MavLinkProtocolV1.PAYLOAD_OFFSET,
 				field.length
 			);
@@ -180,9 +177,9 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 
 		// serialize checksum
 		const crc = x25crc(buffer, 1, 2, definition.MAGIC_NUMBER);
-		buffer.setUint16(crc, buffer.byteLength - 2, true);
+		view.setUint16(buffer.byteLength - 2, crc, true);
 
-		return buffer;
+		return view.buffer;
 	}
 
 	header(buffer: DataView, timestamp?: bigint): MavLinkPacketHeader {
@@ -225,8 +222,6 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 			MavLinkProtocolV1.PAYLOAD_OFFSET + plen
 		);
 		return payload;
-		// const padding = DataView.from(new Uint8Array(255 - payload.length));
-		// return DataView.concat([payload, padding]);
 	}
 }
 
@@ -310,18 +305,17 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 	 * @param timestamp optional timestamp for packet signing (default: Date.now())
 	 * @returns signed package
 	 */
-	sign(buffer: DataView, linkId: number, key: DataView, timestamp = Date.now()) {
+	async sign(buffer: DataView, linkId: number, key: Uint8Array, timestamp = Date.now()) {
 		//console.trace('Signing message');
 
-		const result = DataView.concat([
-			buffer,
-			DataView.from(new Uint8Array(MavLinkPacketSignature.SIGNATURE_LENGTH))
-		]);
+		const combined = new Uint8Array(buffer.byteLength + MavLinkPacketSignature.SIGNATURE_LENGTH);
+		combined.set(new Uint8Array(buffer.buffer), 0);
+		const result = new DataView(combined.buffer);
 
 		const signer = new MavLinkPacketSignature(result);
 		signer.linkId = linkId;
 		signer.timestamp = (timestamp - MavLinkProtocolV2.SIGNATURE_START_TIME) * 100;
-		signer.signature = signer.calculate(key);
+		signer.signature = new Uint8Array(signer.calculate(key));
 
 		return result;
 	}
@@ -335,7 +329,7 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 			i--
 		) {
 			result = i;
-			if (buffer[i] !== 0) {
+			if (buffer.getUint8(i) !== 0) {
 				result++;
 				break;
 			}
@@ -388,8 +382,6 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 		);
 
 		return payload;
-		// const padding = DataView.from(new Uint8Array(255 - payload.length));
-		// return DataView.concat([payload, padding]);
 	}
 
 	signature(buffer: DataView, header: MavLinkPacketHeader): MavLinkPacketSignature | null {
@@ -423,8 +415,11 @@ export class MavLinkPacketSignature {
 	 * @param passphrase secret to generate the key
 	 * @returns key as a buffer
 	 */
-	static key(passphrase: string) {
-		return createHash('sha256').update(passphrase).digest();
+	static async key(passphrase: string): Promise<ArrayBuffer> {
+		// return createHash('sha256').update(passphrase).digest();
+		const encoder = new TextEncoder();
+		const data = encoder.encode(passphrase);
+		return await crypto.subtle.digest('SHA-256', data);
 	}
 
 	constructor(private readonly buffer: DataView) {}
@@ -465,14 +460,16 @@ export class MavLinkPacketSignature {
 	 * Get the signature from signature
 	 */
 	get signature() {
-		return this.buffer.slice(this.offset + 7, this.offset + 7 + 6).toString('hex');
+		return new Uint8Array(this.buffer.buffer.slice(this.offset + 7, this.offset + 7 + 6));
 	}
 
 	/**
 	 * Set the signature in signature
 	 */
-	set signature(value: string) {
-		this.buffer.write(value, this.offset + 7, 'hex');
+	set signature(value: Uint8Array) {
+		// this.buffer.write(value, this.offset + 7, 'hex');
+		const target = new Uint8Array(this.buffer.buffer, this.offset + 7, 6);
+		target.set(value);
 	}
 
 	/**
@@ -483,14 +480,17 @@ export class MavLinkPacketSignature {
 	 * @param key the secret key (Buffer)
 	 * @returns calculated signature value
 	 */
-	calculate(key: DataView) {
-		const hash = createHash('sha256')
-			.update(key)
-			.update(this.buffer.slice(0, this.buffer.byteLength - 6))
-			.digest('hex')
-			.substr(0, 12);
+	calculate(key: Uint8Array) {
+		// const hash = createHash('sha256')
+		// 	.update(key)
+		// 	.update(this.buffer.slice(0, this.buffer.byteLength - 6))
+		// 	.digest('hex')
+		// 	.substr(0, 12);
+		//
+		// return hash;
 
-		return hash;
+		// TODO: unimplemented
+		return new Uint8Array(6);
 	}
 
 	/**
@@ -501,7 +501,7 @@ export class MavLinkPacketSignature {
 	 * @param key key
 	 * @returns true if the signature matches, false otherwise
 	 */
-	matches(key: DataView) {
+	matches(key: Uint8Array) {
 		return this.calculate(key) === this.signature;
 	}
 
@@ -614,7 +614,7 @@ export class MavLinkPacketSplitter {
 			onCrcError = () => {},
 			magicNumbers = MSG_ID_MAGIC_NUMBER
 		}: {
-			onCrcError?: null;
+			onCrcError?: () => void | null;
 			magicNumbers?: Record<string, number>;
 		} = {}
 	) {
@@ -780,7 +780,7 @@ export class MavLinkPacketSplitter {
 					`magic: ${magic} (${hex(magic)})`
 				];
 				console.warn(message.join(' '));
-				if (this.onCrcError) this.onCrcError(buffer);
+				// if (this.onCrcError) this.onCrcError(buffer);
 
 				return PacketValidationResult.INVALID;
 			}
