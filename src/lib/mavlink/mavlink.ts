@@ -60,7 +60,7 @@ export abstract class MavLinkProtocol {
 	/**
 	 * Serialize a message to a buffer
 	 */
-	abstract serialize(message: MavLinkData, seq: uint8_t): DataView;
+	abstract serialize(message: MavLinkData, seq: uint8_t): ArrayBuffer;
 
 	/**
 	 * Deserialize packet header
@@ -145,7 +145,7 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 		super();
 	}
 
-	serialize(message: MavLinkData, seq: number): DataView {
+	serialize(message: MavLinkData, seq: number): ArrayBuffer {
 		//console.trace('Serializing message (seq:', seq, ')');
 
 		const definition: MavLinkDataConstructor<MavLinkData> = <any>message.constructor;
@@ -254,25 +254,23 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 		super();
 	}
 
-	serialize(message: MavLinkData, seq: number): DataView {
+	public serialize(message: MavLinkData, seq: number): ArrayBuffer {
 		//console.trace('Serializing message (seq:', seq, ')');
 
 		const definition: MavLinkDataConstructor<MavLinkData> = <any>message.constructor;
-		const buffer = new DataView(
-			new Uint8Array(
-				MavLinkProtocolV2.PAYLOAD_OFFSET +
-					definition.PAYLOAD_LENGTH +
-					MavLinkProtocol.CHECKSUM_LENGTH
-			)
+		const buffer = new ArrayBuffer(
+			MavLinkProtocolV2.PAYLOAD_OFFSET + definition.PAYLOAD_LENGTH + MavLinkProtocol.CHECKSUM_LENGTH
 		);
+		const view = new DataView(buffer);
 
-		buffer.setUint8(MavLinkProtocolV2.START_BYTE, 0);
-		buffer.setUint8(this.incompatibilityFlags, 2);
-		buffer.setUint8(this.compatibilityFlags, 3);
-		buffer.setUint8(seq, 4);
-		buffer.setUint8(this.sysid, 5);
-		buffer.setUint8(this.compid, 6);
-		setUintLE(buffer, definition.MSG_ID, 7, 3);
+		view.setUint8(0, 0xfd);
+		view.setUint8(0, MavLinkProtocolV2.START_BYTE);
+		view.setUint8(2, this.incompatibilityFlags);
+		view.setUint8(3, this.compatibilityFlags);
+		view.setUint8(4, seq);
+		view.setUint8(5, this.sysid);
+		view.setUint8(6, this.compid);
+		setUintLE(view, definition.MSG_ID, 7, 3);
 
 		definition.FIELDS.forEach((field) => {
 			const serialize = SERIALIZERS[field.type];
@@ -280,24 +278,25 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 			// @ts-ignore
 			serialize(
 				message[field.name],
-				buffer,
+				view,
 				field.offset + MavLinkProtocolV2.PAYLOAD_OFFSET,
 				field.length
 			);
 		});
 
 		// calculate actual truncated payload length
-		const payloadLength = this.calculateTruncatedPayloadLength(buffer);
-		buffer.setUint8(payloadLength, 1);
+		const payloadLength = this.calculateTruncatedPayloadLength(view);
+		view.setUint8(1, payloadLength);
 
 		// slice out the message buffer
-		const result = buffer.slice(
+		const result = view.buffer.slice(
 			0,
 			MavLinkProtocolV2.PAYLOAD_OFFSET + payloadLength + MavLinkProtocol.CHECKSUM_LENGTH
 		);
 
 		const crc = x25crc(result, 1, 2, definition.MAGIC_NUMBER);
-		result.setUint16LE(crc, result.length - MavLinkProtocol.CHECKSUM_LENGTH);
+		const truncatedView = new DataView(result);
+		truncatedView.setUint16(result.byteLength - MavLinkProtocol.CHECKSUM_LENGTH, crc, true);
 
 		return result;
 	}

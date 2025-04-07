@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { BasicLayout, Indicator } from '$lib';
 	import { onMount } from 'svelte';
-	import { MavLinkPacketParser, MavLinkPacketSplitter } from '$lib/mavlink/mavlink.js';
+	import {
+		MavLinkPacketParser,
+		MavLinkPacketSplitter,
+		MavLinkProtocolV2
+	} from '$lib/mavlink/mavlink.js';
 	import { ardupilotmega, common, type MavLinkPacketRegistry, minimal } from 'mavlink-mappings';
 	import { Heartbeat } from 'mavlink-mappings/dist/lib/minimal.js';
 
@@ -11,6 +15,7 @@
 		...ardupilotmega.REGISTRY
 	};
 
+	let protocol = new MavLinkProtocolV2();
 	let parser = new MavLinkPacketParser();
 	let splitter = new MavLinkPacketSplitter();
 
@@ -34,7 +39,16 @@
 				const clazz = REGISTRY[message.header.msgid];
 				if (clazz) {
 					const data = message.protocol.data(payload, clazz);
-					console.log('>', data);
+					// console.log('>', data);
+					if (data instanceof Heartbeat) {
+						console.log(packet);
+						console.log('received heartbeat and trying to send one back');
+						const heartbeat = new Heartbeat();
+						heartbeat.autopilot = minimal.MavAutopilot.ARDUPILOTMEGA;
+						let output = protocol.serialize(heartbeat, 1);
+						console.log(output);
+						ws.send(output);
+					}
 				} else {
 					console.log('!', message.debug());
 				}
