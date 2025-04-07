@@ -17,10 +17,10 @@
  * If not, see <https://www.gnu.org/licenses/lgpl-3.0.html>.
  */
 
-import { type uint8_t, type uint16_t, x25crc } from 'mavlink-mappings';
+import { type uint8_t, type uint16_t } from 'mavlink-mappings';
 import { MSG_ID_MAGIC_NUMBER } from 'mavlink-mappings';
 import { MavLinkData, type MavLinkDataConstructor } from 'mavlink-mappings';
-import { hex } from './utils.js';
+import { hex, x25crc } from './utils.js';
 import { DESERIALIZERS, SERIALIZERS } from '$lib/mavlink/serialization.js';
 
 /**
@@ -79,33 +79,32 @@ export abstract class MavLinkProtocol {
 	 * the fields, including extensions that are sometimes not being sent
 	 * from the transmitting system.
 	 */
-	abstract payload(buffer: DataView): DataView;
+	abstract payload(buffer: DataView): ArrayBuffer | SharedArrayBuffer;
 
 	/**
 	 * Deserialize payload into actual data class
 	 */
 	data<T extends MavLinkData>(payload: DataView, clazz: MavLinkDataConstructor<T>): T {
-		console.trace('Deserializing', clazz.MSG_NAME, 'with payload of size', payload.byteLength);
+		//console.trace('Deserializing', clazz.MSG_NAME, 'with payload of size', payload.byteLength);
 
 		const instance = new clazz();
-		let payloadLength = payload.length;
+		let payloadLength = payload.byteLength;
+		// Pad the payload if it is trimmed
+		// https://mavlink.io/en/guide/serialization.html
+		// MAVLink 2 implementations must truncate any empty (zero-filled)
+		// bytes at the end of the serialized payload before it is sent.
+		if (payloadLength < clazz.PAYLOAD_LENGTH) {
+			const src = new Uint8Array(payload.buffer, payload.byteOffset, payloadLength);
+			const paddedBuffer = new Uint8Array(clazz.PAYLOAD_LENGTH);
+			paddedBuffer.set(src);
+			payload = new DataView(paddedBuffer.buffer);
+		}
+
 		for (const field of clazz.FIELDS) {
 			const fieldLength = field.length === 0 ? field.size : field.length * field.size;
 			const deserialize = DESERIALIZERS[field.type];
 			if (!deserialize) {
 				throw new Error(`Unknown field type ${field.type}`);
-			}
-
-			// Pad the payload if it is trimmed
-			// https://mavlink.io/en/guide/serialization.html
-			// MAVLink 2 implementations must truncate any empty (zero-filled)
-			// bytes at the end of the serialized payload before it is sent.
-			if (fieldLength > payloadLength) {
-				const diff = fieldLength - payloadLength;
-				const newPayloadLength = payload.length + diff;
-				const newBuffer = DataView.alloc(newPayloadLength);
-				payload.copy(newBuffer, 0, 0, payload.length);
-				payload = newBuffer;
 			}
 
 			// @ts-ignore
@@ -147,7 +146,7 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 	}
 
 	serialize(message: MavLinkData, seq: number): DataView {
-		console.trace('Serializing message (seq:', seq, ')');
+		//console.trace('Serializing message (seq:', seq, ')');
 
 		const definition: MavLinkDataConstructor<MavLinkData> = <any>message.constructor;
 		const buffer = DataView.from(
@@ -187,7 +186,7 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 	}
 
 	header(buffer: DataView, timestamp?: bigint): MavLinkPacketHeader {
-		console.trace('Reading header from buffer (len:', buffer.byteLength, ')');
+		//console.trace('Reading header from buffer (len:', buffer.byteLength, ')');
 
 		const startByte = buffer.getUint8(0);
 		if (startByte !== MavLinkProtocolV1.START_BYTE) {
@@ -211,22 +210,23 @@ export class MavLinkProtocolV1 extends MavLinkProtocol {
 	 * Deserialize packet checksum
 	 */
 	crc(buffer: DataView): uint16_t {
-		console.trace('Reading crc from buffer (len:', buffer.byteLength, ')');
+		//console.trace('Reading crc from buffer (len:', buffer.byteLength, ')');
 
 		const plen = buffer.getUint8(1);
 		return buffer.getUint16(MavLinkProtocolV1.PAYLOAD_OFFSET + plen, true);
 	}
 
-	payload(buffer: DataView): DataView {
-		console.trace('Reading payload from buffer (len:', buffer.byteLength, ')');
+	payload(buffer: DataView): ArrayBuffer | SharedArrayBuffer {
+		//console.trace('Reading payload from buffer (len:', buffer.byteLength, ')');
 
 		const plen = buffer.getUint8(1);
-		const payload = buffer.slice(
+		const payload = buffer.buffer.slice(
 			MavLinkProtocolV1.PAYLOAD_OFFSET,
 			MavLinkProtocolV1.PAYLOAD_OFFSET + plen
 		);
-		const padding = DataView.from(new Uint8Array(255 - payload.length));
-		return DataView.concat([payload, padding]);
+		return payload;
+		// const padding = DataView.from(new Uint8Array(255 - payload.length));
+		// return DataView.concat([payload, padding]);
 	}
 }
 
@@ -255,7 +255,7 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 	}
 
 	serialize(message: MavLinkData, seq: number): DataView {
-		console.trace('Serializing message (seq:', seq, ')');
+		//console.trace('Serializing message (seq:', seq, ')');
 
 		const definition: MavLinkDataConstructor<MavLinkData> = <any>message.constructor;
 		const buffer = new DataView(
@@ -312,7 +312,7 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 	 * @returns signed package
 	 */
 	sign(buffer: DataView, linkId: number, key: DataView, timestamp = Date.now()) {
-		console.trace('Signing message');
+		//console.trace('Signing message');
 
 		const result = DataView.concat([
 			buffer,
@@ -346,7 +346,7 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 	}
 
 	header(buffer: DataView, timestamp?: bigint): MavLinkPacketHeader {
-		console.trace('Reading header from buffer (len:', buffer.byteLength, ')');
+		//console.trace('Reading header from buffer (len:', buffer.byteLength, ')');
 
 		const startByte = buffer.getUint8(0);
 		if (startByte !== MavLinkProtocolV2.START_BYTE) {
@@ -373,26 +373,28 @@ export class MavLinkProtocolV2 extends MavLinkProtocol {
 	 * Deserialize packet checksum
 	 */
 	crc(buffer: DataView): uint16_t {
-		console.trace('Reading crc from buffer (len:', buffer.byteLength, ')');
+		//console.trace('Reading crc from buffer (len:', buffer.byteLength, ')');
 
 		const plen = buffer.getUint8(1);
 		return buffer.getUint16(MavLinkProtocolV2.PAYLOAD_OFFSET + plen, true);
 	}
 
-	payload(buffer: DataView): DataView {
-		console.trace('Reading payload from buffer (len:', buffer.byteLength, ')');
+	payload(buffer: DataView): ArrayBuffer | SharedArrayBuffer {
+		//console.trace('Reading payload from buffer (len:', buffer.byteLength, ')');
 
 		const plen = buffer.getUint8(1);
-		const payload = buffer.slice(
+		const payload = buffer.buffer.slice(
 			MavLinkProtocolV2.PAYLOAD_OFFSET,
 			MavLinkProtocolV2.PAYLOAD_OFFSET + plen
 		);
-		const padding = DataView.from(new Uint8Array(255 - payload.length));
-		return DataView.concat([payload, padding]);
+
+		return payload;
+		// const padding = DataView.from(new Uint8Array(255 - payload.length));
+		// return DataView.concat([payload, padding]);
 	}
 
 	signature(buffer: DataView, header: MavLinkPacketHeader): MavLinkPacketSignature | null {
-		console.trace('Reading signature from buffer (len:', buffer.byteLength, ')');
+		//console.trace('Reading signature from buffer (len:', buffer.byteLength, ')');
 
 		if (header.incompatibilityFlags & MavLinkProtocolV2.IFLAG_SIGNED) {
 			return new MavLinkPacketSignature(buffer);
@@ -514,9 +516,9 @@ export class MavLinkPacketSignature {
  */
 export class MavLinkPacket {
 	constructor(
-		readonly buffer: DataView,
+		readonly buffer: ArrayBuffer,
 		readonly header: MavLinkPacketHeader = new MavLinkPacketHeader(),
-		readonly payload: DataView = DataView.from(new Uint8Array(255)),
+		readonly payload: ArrayBuffer | SharedArrayBuffer = new ArrayBuffer(0),
 		readonly crc: uint16_t = 0,
 		readonly protocol: MavLinkProtocol = new MavLinkProtocolV1(),
 		readonly signature: MavLinkPacketSignature | null = null
@@ -566,17 +568,285 @@ export class MavLinkPacketParser {
 		}
 	}
 
-	parse({ buffer = new DataView([]), timestamp = null, ...rest } = {}, encoding: string) {
-		const protocol = this.getProtocol(buffer);
-		const header = protocol.header(buffer, timestamp || undefined);
-		const payload = protocol.payload(buffer);
-		const crc = protocol.crc(buffer);
+	parse({ buffer = new ArrayBuffer(), timestamp = null, ...rest } = {}): MavLinkPacket {
+		const view = new DataView(buffer);
+		const protocol = this.getProtocol(view);
+		const header = protocol.header(view, timestamp || undefined);
+		const payload = protocol.payload(view);
+		const crc = protocol.crc(view);
 		const signature =
-			protocol instanceof MavLinkProtocolV2 ? protocol.signature(buffer, header) : null;
+			protocol instanceof MavLinkProtocolV2 ? protocol.signature(view, header) : null;
 
 		const packet = new MavLinkPacket(buffer, header, payload, crc, protocol, signature);
 
 		return packet;
+	}
+}
+
+/**
+ * This enum describes the different ways validation of a buffer can end
+ */
+enum PacketValidationResult {
+	VALID,
+	INVALID,
+	UNKNOWN
+}
+
+/**
+ * A transform stream that splits the incoming data stream into chunks containing full MavLink messages
+ */
+export class MavLinkPacketSplitter {
+	private buffer = new ArrayBuffer(0);
+	private onCrcError: (() => void) | null = null;
+	private readonly magicNumbers: Record<string, number>;
+	private timestamp: bigint | null = null;
+	private _validPackagesCount = 0;
+	private _unknownPackagesCount = 0;
+	private _invalidPackagesCount = 0;
+
+	/**
+	 * @param opts options to pass on to the Transform constructor
+	 * @param verbose print diagnostic information
+	 * @param onCrcError callback executed if there is a CRC error (mostly for debugging)
+	 */
+	constructor(
+		opts = {},
+		{
+			onCrcError = () => {},
+			magicNumbers = MSG_ID_MAGIC_NUMBER
+		}: {
+			onCrcError?: null;
+			magicNumbers?: Record<string, number>;
+		} = {}
+	) {
+		this.onCrcError = onCrcError;
+		this.magicNumbers = magicNumbers;
+	}
+
+	parse(chunk: ArrayBuffer) {
+		const result: ArrayBuffer[] = [];
+		const combined = new Uint8Array(this.buffer.byteLength + chunk.byteLength);
+		combined.set(new Uint8Array(this.buffer), 0);
+		combined.set(new Uint8Array(chunk), this.buffer.byteLength);
+		this.buffer = combined.buffer;
+
+		while (this.buffer.byteLength > 0) {
+			const offset = this.findStartOfPacket(this.buffer);
+			if (offset === null) {
+				// start of the package was not found - need more data
+				break;
+			}
+
+			// if the current offset is exactly the size of the timestamp field from tlog then read it.
+			if (offset >= 8) {
+				const view = new DataView(this.buffer);
+				this.timestamp = view.getBigUint64(offset - 8, false) / 1000n;
+			} else {
+				this.timestamp = null;
+			}
+			// fast-forward the buffer to the first start byte
+			if (offset > 0) {
+				this.buffer = this.buffer.slice(offset);
+			}
+
+			console.debug('Found potential packet start at', offset);
+
+			// get protocol this buffer is encoded with
+			const Protocol = this.getPacketProtocol(this.buffer);
+
+			console.debug('Packet protocol is', Protocol.NAME);
+
+			// check if the buffer contains at least the minimum size of data
+			if (this.buffer.byteLength < Protocol.PAYLOAD_OFFSET + MavLinkProtocol.CHECKSUM_LENGTH) {
+				// current buffer shorter than the shortest message - skipping
+				console.debug('Current buffer shorter than the shortest message - skipping');
+				break;
+			}
+
+			// check if the current buffer contains the entire message
+			const expectedBufferLength = this.readPacketLength(this.buffer, Protocol);
+			console.debug(
+				'Expected buffer length:',
+				expectedBufferLength,
+				`(${hex(expectedBufferLength)})`
+			);
+			if (this.buffer.byteLength < expectedBufferLength) {
+				// current buffer is not fully retrieved yet - skipping
+				console.debug('Current buffer is not fully retrieved yet - skipping');
+				break;
+			} else {
+				console.debug(
+					'Current buffer length:',
+					this.buffer.byteLength,
+					`(${hex(this.buffer.byteLength, 4)})`
+				);
+			}
+
+			// retrieve the buffer based on payload size
+			const buffer = this.buffer.slice(0, expectedBufferLength);
+			console.debug(
+				'Recognized buffer length:',
+				buffer.byteLength,
+				`(${hex(buffer.byteLength, 2)})`
+			);
+
+			switch (this.validatePacket(buffer, Protocol)) {
+				case PacketValidationResult.VALID:
+					console.debug('Found a valid packet');
+					this._validPackagesCount++;
+					result.push(buffer);
+					// this.push({ buffer, timestamp: this.timestamp });
+					// truncate the buffer to remove the current message
+					this.buffer = this.buffer.slice(expectedBufferLength);
+					break;
+				case PacketValidationResult.INVALID:
+					console.debug('Found an invalid packet - skipping');
+					this._invalidPackagesCount++;
+					// truncate the buffer to remove the wrongly identified STX
+					this.buffer = this.buffer.slice(1);
+					break;
+				case PacketValidationResult.UNKNOWN:
+					console.debug('Found an unknown packet - skipping');
+					this._unknownPackagesCount++;
+					// truncate the buffer to remove the current message
+					this.buffer = this.buffer.slice(expectedBufferLength);
+					break;
+			}
+		}
+		return result;
+	}
+
+	protected findStartOfPacket(buffer: ArrayBuffer, offset: number = 0) {
+		const view = new Uint8Array(buffer);
+		const stxv1 = view.indexOf(MavLinkProtocolV1.START_BYTE, offset);
+		const stxv2 = view.indexOf(MavLinkProtocolV2.START_BYTE, offset);
+
+		if (stxv1 >= 0 && stxv2 >= 0) {
+			// in the current buffer both STX v1 and v2 are found - get the first one
+			if (stxv1 < stxv2) {
+				return stxv1;
+			} else {
+				return stxv2;
+			}
+		} else if (stxv1 >= 0) {
+			// in the current buffer STX v1 is found
+			return stxv1;
+		} else if (stxv2 >= 0) {
+			// in the current buffer STX v2 is found
+			return stxv2;
+		} else {
+			// no STX found
+			return null;
+		}
+	}
+
+	private getPacketProtocol(buffer: ArrayBuffer) {
+		const view = new DataView(buffer);
+		return KNOWN_PROTOCOLS_BY_STX[view.getUint8(0)] || null;
+	}
+
+	private readPacketLength(buffer: ArrayBuffer, Protocol: MavLinkProtocolConstructor) {
+		// check if the current buffer contains the entire message
+		const view = new DataView(buffer);
+		const payloadLength = view.getUint8(1);
+		return (
+			Protocol.PAYLOAD_OFFSET +
+			payloadLength +
+			MavLinkProtocol.CHECKSUM_LENGTH +
+			(this.isV2Signed(buffer) ? MavLinkPacketSignature.SIGNATURE_LENGTH : 0)
+		);
+	}
+
+	private validatePacket(buffer: ArrayBuffer, Protocol: MavLinkProtocolConstructor) {
+		const view = new DataView(buffer);
+		const protocol = new Protocol();
+		const header = protocol.header(view);
+		const magic = this.magicNumbers[header.msgid];
+		if (magic !== null && magic !== undefined) {
+			const crc = protocol.crc(view);
+			const trim = this.isV2Signed(buffer)
+				? MavLinkPacketSignature.SIGNATURE_LENGTH + MavLinkProtocol.CHECKSUM_LENGTH
+				: MavLinkProtocol.CHECKSUM_LENGTH;
+			const crc2 = x25crc(buffer, 1, trim, magic);
+			if (crc === crc2) {
+				// this is a proper message that is known and has been validated for corrupted data
+				return PacketValidationResult.VALID;
+			} else {
+				// CRC mismatch
+				const message = [
+					`CRC error; expected: ${crc2} (${hex(crc2, 4)}), got ${crc} (${hex(crc, 4)});`,
+					`msgid: ${header.msgid} (${hex(header.msgid)}),`,
+					`seq: ${header.seq} (${hex(header.seq)}),`,
+					`plen: ${header.payloadLength} (${hex(header.payloadLength)}),`,
+					`magic: ${magic} (${hex(magic)})`
+				];
+				console.warn(message.join(' '));
+				if (this.onCrcError) this.onCrcError(buffer);
+
+				return PacketValidationResult.INVALID;
+			}
+		} else {
+			// unknown message (as in not generated from the XML sources)
+			console.debug(`Unknown message with id ${header.msgid} (magic number not found) - skipping`);
+
+			return PacketValidationResult.UNKNOWN;
+		}
+	}
+
+	/**
+	 * Checks if the buffer contains the entire message with signature
+	 *
+	 * @param buffer buffer with the message
+	 */
+	private isV2Signed(buffer: ArrayBuffer) {
+		const view = new DataView(buffer);
+		const protocol = view.getUint8(0);
+		if (protocol === MavLinkProtocolV2.START_BYTE) {
+			const flags = view.getUint8(2);
+			return !!(flags & MavLinkProtocolV2.IFLAG_SIGNED);
+		}
+	}
+
+	/**
+	 * Number of invalid packages
+	 */
+	get validPackages() {
+		return this._validPackagesCount;
+	}
+
+	/**
+	 * Reset the number of valid packages
+	 */
+	resetValidPackagesCount() {
+		this._validPackagesCount = 0;
+	}
+
+	/**
+	 * Number of invalid packages
+	 */
+	get invalidPackages() {
+		return this._invalidPackagesCount;
+	}
+
+	/**
+	 * Reset the number of invalid packages
+	 */
+	resetInvalidPackagesCount() {
+		this._invalidPackagesCount = 0;
+	}
+
+	/**
+	 * Number of invalid packages
+	 */
+	get unknownPackagesCount() {
+		return this._unknownPackagesCount;
+	}
+
+	/**
+	 * Reset the number of invalid packages
+	 */
+	resetUnknownPackagesCount() {
+		this._unknownPackagesCount = 0;
 	}
 }
 

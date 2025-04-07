@@ -26,89 +26,92 @@ import type {
 } from 'mavlink-mappings';
 
 type Serializer =
-	| ((value: any, buffer: Buffer, offset: number) => void)
-	| ((value: any, buffer: Buffer, offset: number, maxLen: number) => void);
+	| ((value: any, buffer: DataView, offset: number) => void)
+	| ((value: any, buffer: DataView, offset: number, maxLen: number) => void);
 
 type Serializers = { [key: string]: Serializer };
 
 const SPECIAL_TYPES_SERIALIZERS: Serializers = {
-	uint8_t_mavlink_version: (value: uint8_t, buffer: Buffer, offset: number) =>
-		buffer.writeUInt8(value, offset)
+	uint8_t_mavlink_version: (value: uint8_t, buffer: DataView, offset: number) =>
+		buffer.setUint8(value, offset)
 };
 
 const SINGULAR_TYPES_SERIALIZERS: Serializers = {
-	char: (value: int8_t, buffer: Buffer, offset: number) => buffer.writeUInt8(value, offset),
-	int8_t: (value: int8_t, buffer: Buffer, offset: number) => buffer.writeInt8(value, offset),
-	uint8_t: (value: uint8_t, buffer: Buffer, offset: number) => buffer.writeUInt8(value, offset),
-	int16_t: (value: int16_t, buffer: Buffer, offset: number) => buffer.writeInt16LE(value, offset),
-	uint16_t: (value: uint16_t, buffer: Buffer, offset: number) =>
-		buffer.writeUInt16LE(value, offset),
-	int32_t: (value: int32_t, buffer: Buffer, offset: number) => buffer.writeInt32LE(value, offset),
-	uint32_t: (value: uint32_t, buffer: Buffer, offset: number) =>
-		buffer.writeUInt32LE(value, offset),
-	int64_t: (value: int64_t, buffer: Buffer, offset: number) =>
-		buffer.writeBigInt64LE(value, offset),
-	uint64_t: (value: uint64_t, buffer: Buffer, offset: number) =>
-		buffer.writeBigUInt64LE(value, offset),
-	float: (value: float, buffer: Buffer, offset: number) => buffer.writeFloatLE(value, offset),
-	double: (value: double, buffer: Buffer, offset: number) => buffer.writeDoubleLE(value, offset)
+	char: (value: int8_t, buffer: DataView, offset: number) => buffer.setUint8(value, offset),
+	int8_t: (value: int8_t, buffer: DataView, offset: number) => buffer.setInt8(value, offset),
+	uint8_t: (value: uint8_t, buffer: DataView, offset: number) => buffer.setUint8(value, offset),
+	int16_t: (value: int16_t, buffer: DataView, offset: number) =>
+		buffer.setInt16(value, offset, true),
+	uint16_t: (value: uint16_t, buffer: DataView, offset: number) =>
+		buffer.setUint16(value, offset, true),
+	int32_t: (value: int32_t, buffer: DataView, offset: number) =>
+		buffer.setInt32(value, offset, true),
+	uint32_t: (value: uint32_t, buffer: DataView, offset: number) =>
+		buffer.setUint32(value, offset, true),
+	int64_t: (value: int64_t, buffer: DataView, offset: number) =>
+		buffer.setBigInt64(value, offset, true),
+	uint64_t: (value: uint64_t, buffer: DataView, offset: number) =>
+		buffer.setBigUint64(value, offset, true),
+	float: (value: float, buffer: DataView, offset: number) => buffer.setFloat32(value, offset, true),
+	double: (value: double, buffer: DataView, offset: number) =>
+		buffer.setFloat64(value, offset, true)
 };
 
 const ARRAY_TYPES_SERIALIZERS: Serializers = {
-	'char[]': (value: string, buffer: Buffer, offset: number, maxLen: number) => {
+	'char[]': (value: string, buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
 			const code = value.charCodeAt(i);
-			buffer.writeUInt8(code, offset + i);
+			buffer.setUint8(code, offset + i);
 		}
 	},
-	'int8_t[]': (value: uint8_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'int8_t[]': (value: uint8_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeInt8(value[i], offset + i);
+			buffer.setInt8(value[i], offset + i);
 		}
 	},
-	'uint8_t[]': (value: uint8_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'uint8_t[]': (value: uint8_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeUInt8(value[i], offset + i);
+			buffer.setUint8(value[i], offset + i);
 		}
 	},
-	'int16_t[]': (value: uint16_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'int16_t[]': (value: uint16_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeInt16LE(value[i], offset + i * 2);
+			buffer.setInt16(value[i], offset + i * 2, true);
 		}
 	},
-	'uint16_t[]': (value: uint16_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'uint16_t[]': (value: uint16_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeUInt16LE(value[i], offset + i * 2);
+			buffer.setUint16(value[i], offset + i * 2, true);
 		}
 	},
-	'int32_t[]': (value: uint32_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'int32_t[]': (value: uint32_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeInt32LE(value[i], offset + i * 4);
+			buffer.setInt32(value[i], offset + i * 4, true);
 		}
 	},
-	'uint32_t[]': (value: uint32_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'uint32_t[]': (value: uint32_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeUInt32LE(value[i], offset + i * 4);
+			buffer.setUint32(value[i], offset + i * 4, true);
 		}
 	},
-	'int64_t[]': (value: uint64_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'int64_t[]': (value: uint64_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeBigInt64LE(value[i], offset + i * 8);
+			buffer.setBigInt64(value[i], offset + i * 8, true);
 		}
 	},
-	'uint64_t[]': (value: uint64_t[], buffer: Buffer, offset: number, maxLen: number) => {
+	'uint64_t[]': (value: uint64_t[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeBigUInt64LE(value[i], offset + i * 8);
+			buffer.setBigUint64(value[i], offset + i * 8, true);
 		}
 	},
-	'float[]': (value: float[], buffer: Buffer, offset: number, maxLen: number) => {
+	'float[]': (value: float[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeFloatLE(value[i], offset + i * 4);
+			buffer.setFloat32(value[i], offset + i * 4, true);
 		}
 	},
-	'double[]': (value: double[], buffer: Buffer, offset: number, maxLen: number) => {
+	'double[]': (value: double[], buffer: DataView, offset: number, maxLen: number) => {
 		for (let i = 0; i < value.length && i < maxLen; i++) {
-			buffer.writeDoubleLE(value[i], offset + i * 8);
+			buffer.setFloat64(value[i], offset + i * 8, true);
 		}
 	}
 };
@@ -123,33 +126,33 @@ export const SERIALIZERS = {
 };
 
 type Deserializer =
-	| ((buffer: Buffer, offset: number) => any)
-	| ((buffer: Buffer, offset: number, length: number) => any);
+	| ((buffer: DataView, offset: number) => any)
+	| ((buffer: DataView, offset: number, length: number) => any);
 type Deserializers = { [key: string]: Deserializer };
 
 const SPECIAL_DESERIALIZERS: Deserializers = {
-	uint8_t_mavlink_version: (buffer: Buffer, offset: number) => buffer.readUInt8(offset)
+	uint8_t_mavlink_version: (buffer: DataView, offset: number) => buffer.getUint8(offset)
 };
 
 const SINGULAR_TYPES_DESERIALIZERS: Deserializers = {
-	char: (buffer: Buffer, offset: number) => String.fromCharCode(buffer.readUInt8(offset)),
-	int8_t: (buffer: Buffer, offset: number) => buffer.readInt8(offset),
-	uint8_t: (buffer: Buffer, offset: number) => buffer.readUInt8(offset),
-	int16_t: (buffer: Buffer, offset: number) => buffer.readInt16LE(offset),
-	uint16_t: (buffer: Buffer, offset: number) => buffer.readUInt16LE(offset),
-	int32_t: (buffer: Buffer, offset: number) => buffer.readInt32LE(offset),
-	uint32_t: (buffer: Buffer, offset: number) => buffer.readUInt32LE(offset),
-	int64_t: (buffer: Buffer, offset: number) => buffer.readBigInt64LE(offset),
-	uint64_t: (buffer: Buffer, offset: number) => buffer.readBigUInt64LE(offset),
-	float: (buffer: Buffer, offset: number) => buffer.readFloatLE(offset),
-	double: (buffer: Buffer, offset: number) => buffer.readDoubleLE(offset)
+	char: (buffer: DataView, offset: number) => String.fromCharCode(buffer.getUint8(offset)),
+	int8_t: (buffer: DataView, offset: number) => buffer.getInt8(offset),
+	uint8_t: (buffer: DataView, offset: number) => buffer.getUint8(offset),
+	int16_t: (buffer: DataView, offset: number) => buffer.getInt16(offset, true),
+	uint16_t: (buffer: DataView, offset: number) => buffer.getUint16(offset, true),
+	int32_t: (buffer: DataView, offset: number) => buffer.getInt32(offset, true),
+	uint32_t: (buffer: DataView, offset: number) => buffer.getUint32(offset, true),
+	int64_t: (buffer: DataView, offset: number) => buffer.getBigInt64(offset, true),
+	uint64_t: (buffer: DataView, offset: number) => buffer.getBigUint64(offset, true),
+	float: (buffer: DataView, offset: number) => buffer.getFloat32(offset, true),
+	double: (buffer: DataView, offset: number) => buffer.getFloat64(offset, true)
 };
 
 const ARRAY_TYPES_DESERIALIZERS: Deserializers = {
-	'char[]': (buffer: Buffer, offset: number, length: number) => {
+	'char[]': (buffer: DataView, offset: number, length: number) => {
 		let result = '';
 		for (let i = 0; i < length; i++) {
-			const charCode = buffer.readUInt8(offset + i);
+			const charCode = buffer.getUint8(offset + i);
 			if (charCode !== 0) {
 				result += String.fromCharCode(charCode);
 			} else {
@@ -158,54 +161,54 @@ const ARRAY_TYPES_DESERIALIZERS: Deserializers = {
 		}
 		return result;
 	},
-	'int8_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'int8_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readInt8(offset + i);
+		for (let i = 0; i < length; i++) result[i] = buffer.getInt8(offset + i);
 		return result;
 	},
-	'uint8_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'uint8_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readUInt8(offset + i);
+		for (let i = 0; i < length; i++) result[i] = buffer.getUint8(offset + i);
 		return result;
 	},
-	'int16_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'int16_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readInt16LE(offset + i * 2);
+		for (let i = 0; i < length; i++) result[i] = buffer.getInt16(offset + i * 2, true);
 		return result;
 	},
-	'uint16_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'uint16_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readUInt16LE(offset + i * 2);
+		for (let i = 0; i < length; i++) result[i] = buffer.getUint16(offset + i * 2, true);
 		return result;
 	},
-	'int32_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'int32_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readInt32LE(offset + i * 4);
+		for (let i = 0; i < length; i++) result[i] = buffer.getInt32(offset + i * 4, true);
 		return result;
 	},
-	'uint32_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'uint32_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readUInt32LE(offset + i * 4);
+		for (let i = 0; i < length; i++) result[i] = buffer.getUint32(offset + i * 4, true);
 		return result;
 	},
-	'int64_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'int64_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<BigInt>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readBigInt64LE(offset + i * 8);
+		for (let i = 0; i < length; i++) result[i] = buffer.getBigInt64(offset + i * 8, true);
 		return result;
 	},
-	'uint64_t[]': (buffer: Buffer, offset: number, length: number) => {
+	'uint64_t[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<BigInt>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readBigUInt64LE(offset + i * 8);
+		for (let i = 0; i < length; i++) result[i] = buffer.getBigUint64(offset + i * 8, true);
 		return result;
 	},
-	'float[]': (buffer: Buffer, offset: number, length: number) => {
+	'float[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readFloatLE(offset + i * 4);
+		for (let i = 0; i < length; i++) result[i] = buffer.getFloat32(offset + i * 4, true);
 		return result;
 	},
-	'double[]': (buffer: Buffer, offset: number, length: number) => {
+	'double[]': (buffer: DataView, offset: number, length: number) => {
 		const result = new Array<number>(length);
-		for (let i = 0; i < length; i++) result[i] = buffer.readDoubleLE(offset + i * 8);
+		for (let i = 0; i < length; i++) result[i] = buffer.getFloat64(offset + i * 8, true);
 		return result;
 	}
 };

@@ -37,6 +37,12 @@
 			<li>
 				<label class="roadmap-item">
 					<input type="checkbox" class="roadmap-checkbox" disabled />
+					Browser-compatible Mavlink parser and serializer. Existing libraries only work with Node.js.
+				</label>
+			</li>
+			<li>
+				<label class="roadmap-item">
+					<input type="checkbox" class="roadmap-checkbox" disabled />
 					Mavlink communication via webserial. This is a prerequisite for components that rely on Mavlink
 					telemetry and commands.
 				</label>

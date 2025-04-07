@@ -1,9 +1,19 @@
 <script lang="ts">
 	import { BasicLayout, Indicator } from '$lib';
 	import { onMount } from 'svelte';
-	import { MavLinkPacketParser } from '$lib/mavlink/mavlink.js';
+	import { MavLinkPacketParser, MavLinkPacketSplitter } from '$lib/mavlink/mavlink.js';
+	import { ardupilotmega, common, type MavLinkPacketRegistry, minimal } from 'mavlink-mappings';
+	import { Heartbeat } from 'mavlink-mappings/dist/lib/minimal.js';
+
+	const REGISTRY: MavLinkPacketRegistry = {
+		...minimal.REGISTRY,
+		...common.REGISTRY,
+		...ardupilotmega.REGISTRY
+	};
 
 	let parser = new MavLinkPacketParser();
+	let splitter = new MavLinkPacketSplitter();
+
 	let ws: WebSocket;
 	let retry = true;
 	let reconnectTimeout = 1000; // Initial reconnection delay (1 second)
@@ -17,10 +27,29 @@
 		};
 
 		ws.onmessage = (event: MessageEvent) => {
-			console.log(event.data);
-			let buffer = new DataView(event.data);
-			let message = parser.parse({ buffer });
-			console.log(message);
+			const packets = splitter.parse(event.data);
+			for (const packet of packets) {
+				const message = parser.parse({ buffer: packet });
+				const payload = new DataView(message.payload);
+				const clazz = REGISTRY[message.header.msgid];
+				if (clazz) {
+					const data = message.protocol.data(payload, clazz);
+					console.log('>', data);
+				} else {
+					console.log('!', message.debug());
+				}
+			}
+			// const packets = parser.parse({ buffer: event.data });
+			// for (const packet of packets) {
+			// 	const payload = new DataView(packet.payload);
+			// 	const clazz = REGISTRY[packet.header.msgid];
+			// 	if (clazz) {
+			// 		const data = packet.protocol.data(payload, clazz);
+			// 		console.log('>', data);
+			// 	} else {
+			// 		console.log('!', packet.debug());
+			// 	}
+			// }
 		};
 
 		ws.onclose = () => {
