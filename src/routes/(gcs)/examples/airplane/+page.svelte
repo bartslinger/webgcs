@@ -38,11 +38,10 @@
 				const payload = new DataView(message.payload);
 				const clazz = REGISTRY[message.header.msgid];
 				if (clazz) {
-					console.log(message.debug());
 					const data = message.protocol.data(payload, clazz);
 					// console.log('>', data);
 					if (data instanceof Heartbeat) {
-						console.log(data);
+						// console.log(data);
 					}
 				} else {
 					console.log('!', message.debug());
