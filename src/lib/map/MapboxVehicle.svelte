@@ -1,13 +1,22 @@
 <script lang="ts">
 	import { getMapContext } from '$lib/map/context.js';
 	import mapboxgl from 'mapbox-gl';
+	import {
+		azimuthToBearing,
+		bearing,
+		bearingToAzimuth,
+		destination,
+		distance,
+		lineArc
+	} from '@turf/turf';
 
 	const context = getMapContext();
 
 	let element: HTMLDivElement;
-	let selected = $state(false);
+	let selected = $state(true);
 
-	let start = [5.06370256065469, 53.25230577819744];
+	let start: [number, number] = [5.06370256065469, 53.25230577819744];
+	let heading = 310;
 	const dashArraySequence = [
 		[0, 4, 3],
 		[0.25, 4, 2.75],
@@ -42,13 +51,11 @@
 	let step = 0;
 	function animateDashArray(timestamp) {
 		if (!context.map) return;
-		const layer = context.map.getLayer('line-to-mouse-layer') as mapboxgl.Layer;
 		// Update line-dasharray using the next value in dashArraySequence. The
 		// divisor in the expression `timestamp / 50` controls the animation speed.
 		const newStep = parseInt((timestamp / 50) % dashArraySequence.length);
 
 		if (newStep !== step) {
-			console.log(layer.paint?.['line-dasharray']);
 			context.map.setPaintProperty(
 				'line-to-mouse-layer',
 				'line-dasharray',
@@ -61,12 +68,14 @@
 		requestAnimationFrame(animateDashArray);
 	}
 
+	const drawFuturePath = (to: [number, number]) => {};
+
 	const load = () => {
 		if (!context.map) return;
 		const marker = new mapboxgl.Marker(element, {
 			anchor: 'center',
 			rotationAlignment: 'map',
-			rotation: 310
+			rotation: heading
 		})
 			.setLngLat(start)
 			.addTo(context.map);
@@ -77,6 +86,7 @@
 			type: 'geojson',
 			data: {
 				type: 'Feature',
+				properties: {},
 				geometry: {
 					type: 'LineString',
 					coordinates: [start, start]
@@ -95,18 +105,64 @@
 				'line-dasharray': [0, 4, 3]
 			}
 		});
+
 		// Update line on mousemove
 		context.map.on('mousemove', (e) => {
 			if (!context.map) return;
-			const end = [e.lngLat.lng, e.lngLat.lat];
 			const source = context.map.getSource('line-to-mouse') as mapboxgl.GeoJSONSource;
-			source.setData({
-				type: 'Feature',
-				geometry: {
-					type: 'LineString',
-					coordinates: [start, end]
+
+			if (selected) {
+				const end = [e.lngLat.lng, e.lngLat.lat];
+				const turnAngle = azimuthToBearing(bearing(start, end) - heading);
+
+				// calculate circle center points
+				let arcCenter = destination(start, 500, heading + Math.sign(turnAngle) * 90, {
+					units: 'meters'
+				});
+				// calculate the bearing between the two points
+				const x = distance(arcCenter, end, { units: 'meters' });
+				const b = bearing(arcCenter.geometry.coordinates, end);
+				let arcEnd = b - Math.sign(turnAngle) * Math.acos(500 / x) * (180 / Math.PI);
+				if (!Number.isFinite(arcEnd)) {
+					return;
 				}
-			});
+				let arcStart = heading - Math.sign(turnAngle) * 90;
+
+				if (turnAngle < 0) {
+					const temp = arcEnd;
+					arcEnd = arcStart;
+					arcStart = temp;
+				}
+				let arcAngle = Math.abs(bearingToAzimuth(arcEnd - arcStart));
+				const arc = lineArc(arcCenter, 500, arcStart, arcEnd, {
+					units: 'meters',
+					steps: Math.ceil(arcAngle / 10)
+				});
+
+				// add one last line segment to start
+				// invert list of the coordinates
+				if (turnAngle < 0) {
+					arc.geometry.coordinates.reverse();
+				}
+				arc.geometry.coordinates.push(end);
+				source.setData({
+					type: 'Feature',
+					geometry: {
+						type: 'LineString',
+						coordinates: arc.geometry.coordinates
+					},
+					properties: {}
+				});
+			} else {
+				source.setData({
+					type: 'Feature',
+					geometry: {
+						type: 'LineString',
+						coordinates: []
+					},
+					properties: {}
+				});
+			}
 		});
 		animateDashArray(0);
 	};
@@ -141,7 +197,7 @@
 </script>
 
 <div class="" bind:this={element}>
-	<button class="hover:cursor-pointer" onclick={clickMarker}>
+	<button aria-label="select-uav" class="hover:cursor-pointer" onclick={clickMarker}>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
 			width="24"
