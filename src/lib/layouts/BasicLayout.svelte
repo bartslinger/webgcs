@@ -2,7 +2,7 @@
 	import { Indicator, MapboxMap } from '$lib/index.js';
 	import MapboxVehicle from '$lib/map/MapboxVehicle.svelte';
 
-	let { topbar } = $props();
+	let { topbar, drone_state } = $props();
 
 	let mapboxAccessToken =
 		'pk.eyJ1IjoibWFwdHVyZSIsImEiOiJjbTBqbmdpbDQwemxyMmpzaGJtb2YyamYyIn0.oow6a5TOps3M4DhblMnlAA';
@@ -15,7 +15,7 @@
 
 	<div class="h-full w-full bg-blue-300">
 		<MapboxMap {mapboxAccessToken}>
-			<MapboxVehicle />
+			<MapboxVehicle {drone_state} />
 		</MapboxMap>
 	</div>
 </div>

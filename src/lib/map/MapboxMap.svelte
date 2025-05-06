@@ -2,8 +2,7 @@
 	import mapboxgl from 'mapbox-gl';
 	import { onDestroy, onMount } from 'svelte';
 	import { type MapContext, setMapContext } from '$lib/map/context.js';
-	import Indicator from '$lib/value/Indicator.svelte';
-	import 'mapbox-gl/dist/mapbox-gl.css';
+	// import 'mapbox-gl/dist/mapbox-gl.css';
 
 	interface Props {
 		mapboxAccessToken: string;
@@ -38,15 +37,17 @@
 	}
 
 	onMount(() => {
-		setTimeout(() => {
-			loadMap();
-		}, 500);
+		loadMap();
 	});
 
 	onDestroy(() => {
 		if (context.map) context.map.remove();
 	});
 </script>
+
+<svelte:head>
+	<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" />
+</svelte:head>
 
 <div class="h-full w-full bg-green-300" bind:this={mapContainer}></div>
 <!--Stuff below here is actually rendered but not visible because of overflow-none-->

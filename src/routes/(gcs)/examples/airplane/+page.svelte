@@ -8,12 +8,20 @@
 	import { ardupilotmega, common, type MavLinkPacketRegistry, minimal } from 'mavlink-mappings';
 	import { Heartbeat } from 'mavlink-mappings/dist/lib/minimal.js';
 	import { BasicLayout, Indicator } from '$lib/index.js';
+	import { GlobalPositionInt } from 'mavlink-mappings/dist/lib/common.js';
 
 	const REGISTRY: MavLinkPacketRegistry = {
 		...minimal.REGISTRY,
 		...common.REGISTRY,
 		...ardupilotmega.REGISTRY
 	};
+
+	let drone_state = $state({
+		lat: 0,
+		lon: 0,
+		alt: 0,
+		heading: 0
+	});
 
 	let protocol = new MavLinkProtocolV2();
 	let parser = new MavLinkPacketParser();
@@ -42,6 +50,11 @@
 					// console.log('>', data);
 					if (data instanceof Heartbeat) {
 						// console.log(data);
+					} else if (data instanceof GlobalPositionInt) {
+						drone_state.lat = data.lat * 10e-8;
+						drone_state.lon = data.lon * 10e-8;
+						drone_state.alt = data.alt * 10e-3;
+						drone_state.heading = data.hdg * 1e-2;
 					}
 				} else {
 					console.log('!', message.debug());
@@ -86,7 +99,7 @@
 	});
 </script>
 
-<BasicLayout>
+<BasicLayout {drone_state}>
 	{#snippet topbar()}
 		this goes in the top bar
 		<Indicator value={42} />
