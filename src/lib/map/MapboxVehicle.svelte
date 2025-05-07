@@ -206,6 +206,7 @@
 		const coords = [drone_state.lon, drone_state.lat] as [number, number];
 		if (!marker) return;
 		marker.setLngLat(coords);
+		marker.setRotation(drone_state.heading);
 	});
 
 	let effectCounter = 0;
