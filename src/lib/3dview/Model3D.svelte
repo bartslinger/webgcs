@@ -31,14 +31,10 @@
 	}
 
 	let canvas_origin_alt = 100;
-	let position_history: THREE.Vector3[] = [
-		new THREE.Vector3(0, 0, 0),
-		new THREE.Vector3(0, 0, 0),
-		new THREE.Vector3(0, 0, 0),
-		new THREE.Vector3(0, 0, 0),
-		new THREE.Vector3(0, 0, 0),
-		new THREE.Vector3(0, 0, 0)
-	];
+	let position_history: THREE.Vector3[] = [];
+	for (let i = 0; i < 25; i++) {
+		position_history.push(new THREE.Vector3(0, 0, 0));
+	}
 
 	onMount(() => {
 		const handleResize = () => {
@@ -87,7 +83,7 @@
 		let dots: THREE.Mesh[] = [];
 		const dotGeometry = new THREE.SphereGeometry(0.1, 2, 2);
 		const dotMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
-		for (let i = 0; i < 5; i++) {
+		for (let i = 0; i < position_history.length - 1; i++) {
 			const dot = new THREE.Mesh(dotGeometry, dotMaterial);
 			dot.position.set(0, 0, 0);
 			dots.push(dot);
@@ -107,10 +103,10 @@
 		scene.add(projectionLine);
 
 		camera.up.set(0, 0, -1);
-		camera.position.x = -30;
+		camera.position.x = -10;
 		camera.position.y = 0;
-		camera.position.z = -10;
-		camera.fov = 55;
+		camera.position.z = -5;
+		camera.fov = 35;
 		handleResize();
 
 		// add lights
